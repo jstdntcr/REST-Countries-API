@@ -2,6 +2,9 @@
 
 const countriesContainer = document.querySelector(".container");
 
+const addButton = document.querySelector(".input__button");
+addButton.addEventListener("click", addNewCountry);
+
 const displayCountry = function(data){
     const html = `
         <div class="countries">
@@ -15,7 +18,7 @@ const displayCountry = function(data){
                     <p class="country__row"><span>💰 </span>${Object.values(data.currencies)[0].name}, 
                     ${Object.values(data.currencies)[0].symbol}</p>
                     <p class="country__row">
-                        <a href="https://en.wikipedia.org/wiki/${data.name.common.toLowerCase()}">Learn more</a>
+                        <a target="_blank" href="https://en.wikipedia.org/wiki/${data.name.common.toLowerCase()}">Learn more</a>
                     </p>
                     <button class="country__button">REMOVE</button>
                 </div>
@@ -27,7 +30,7 @@ const displayCountry = function(data){
 
         const newButton = countriesContainer.lastElementChild.querySelector(".country__button");
         newButton.addEventListener("click", removeCountry);
-}
+};
 
 const displayNeighbourCountry = function(data, mainCountryName){
     const html = `
@@ -42,7 +45,7 @@ const displayNeighbourCountry = function(data, mainCountryName){
                 <p class="country__row"><span>💰 </span>${Object.values(data.currencies)[0].name}, 
                 ${Object.values(data.currencies)[0].symbol}</p>
                 <p class="country__row">
-                    <a href="https://en.wikipedia.org/wiki/${data.name.common.toLowerCase()}">Learn more</a>
+                    <a target="_blank" href="https://en.wikipedia.org/wiki/${data.name.common.toLowerCase()}">Learn more</a>
                 </p>
                 <button class="country__button">REMOVE</button>
             </div>
@@ -55,38 +58,44 @@ const displayNeighbourCountry = function(data, mainCountryName){
 
         const newButton = mainCountry.lastElementChild.querySelector(".country__button");
         newButton.addEventListener("click", removeCountryNeighbour);
-}
+};
 
 function removeCountry(e){
     const currentButton = e.currentTarget;
     currentButton.closest(".countries").remove();
-}
+};
 
 function removeCountryNeighbour(e){
     const currentButton = e.currentTarget;
     currentButton.closest(".country__neighbour").remove();
-}
+};
 
 function addNewCountry(e){
     const input = document.querySelector(".input__box");
     const countryName = input.value.toLowerCase();
-    getCountry(countryName);
+    if (countryName) getCountry(countryName);
     input.value = "";
-}
+};
 
-// const getCountry = function(countryName){
-//     fetch(`https://restcountries.com/v3.1/name/${countryName}`)
-//     .then(function(response){
-//         return response.json();
-//     })
-//     .then(function(data){
-//         displayCountry(data[0], countryName);
-//     });
-// }
+const displayError = function(message){
+    const inputBox = document.querySelector(".input__box");
+    inputBox.placeholder = message;
+    console.log(message);
+    setTimeout(() => inputBox.placeholder = "INPUT COUNTRY NAME", 5000);
+};
+
+const getDataAndConvertToJSON = function(url){
+    return fetch(url)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Something went wrong. Error: ${response.status}`);
+        }
+        return response.json();
+    });
+};
 
 const getCountry = function(countryName){
-    fetch(`https://restcountries.com/v3.1/name/${countryName}`)
-        .then(response => response.json())
+    getDataAndConvertToJSON(`https://restcountries.com/v3.1/name/${countryName}`)
         .then(data => {
             displayCountry(data[0]);
             return data;
@@ -95,22 +104,22 @@ const getCountry = function(countryName){
             // get neighbours
             const mainCountryName = data[0].name.common;
             const neighbours = data[0].borders;
-            console.log(neighbours);
             const neighboursURLs = [];
 
-            neighbours.forEach(neighbour => {
-                neighboursURLs.push(`https://restcountries.com/v3.1/alpha/${neighbour}`)
-            });
-            
-            if (neighboursURLs){
-                neighboursURLs.forEach(url => {
-                    fetch(url)
-                    .then(response => response.json())
-                    .then(data => displayNeighbourCountry(data[0], mainCountryName))
-                })
+            if (neighbours){
+                neighbours.forEach(neighbour => {
+                    neighboursURLs.push(`https://restcountries.com/v3.1/alpha/${neighbour}`)
+                });
+                
+                if (neighboursURLs){
+                    neighboursURLs.forEach(url => {
+                        getDataAndConvertToJSON(url)
+                        .then(data => displayNeighbourCountry(data[0], mainCountryName))
+                    })
+                }
             }
         })
+        .catch(err => {
+            displayError(err.message);
+        });
 }
-
-const addButton = document.querySelector(".input__button");
-addButton.addEventListener("click", addNewCountry)
