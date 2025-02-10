@@ -134,20 +134,20 @@ const getCountryNameByGPS = function(lat, lng){
     return fetch(url)
         .then(response => response.json())
         .then(data => data.results[0].components.country)
+        .catch(err => displayError(err.message));
 }
 
 const isValidName = function(input){
-    return /^[a-z]+$/.test(input.toLowerCase());
+    if (/^[a-z]+$/.test(input.toLowerCase())) return true;
+    else throw new Error("Country name should consists of letters only.")
 }
 
 const isValidCoordinates = function(input){
-    if (!/^[0-9. ]+$/.test(input)) return false;
+    if (!/^[0-9. ]+$/.test(input)) throw new Error("Coordinates should consist of numbers, '.' and ' '.");
     const coords = input.split(" ");
     let counter = 0;
     let latitude = null;
     let longitude = null;
-
-    console.log(coords);
 
     for (let coord of coords){
         if (counter > 1) break;
@@ -204,17 +204,22 @@ function addNewCountry(e){
     const inputData = input.value.toLowerCase();
     input.value = "";
 
-    if (searchTypeFlag){
-        if (inputData && isValidName(inputData)) getCountry(inputData);
-    } else{
-        if (inputData && isValidCoordinates(inputData)){
-            const latitude = inputData.substring(0, inputData.indexOf(" "));
-            const longitude = inputData.substring(inputData.indexOf(" ") + 1);
-
-            return getCountryNameByGPS(latitude, longitude)
-                .then(name => getCountry(name));
+    try{
+        if (searchTypeFlag){
+            if (inputData && isValidName(inputData)) getCountry(inputData);
+        } else{
+            if (inputData && isValidCoordinates(inputData)){
+                const latitude = inputData.substring(0, inputData.indexOf(" "));
+                const longitude = inputData.substring(inputData.indexOf(" ") + 1);
+    
+                return getCountryNameByGPS(latitude, longitude)
+                    .then(name => getCountry(name));
+            }
         }
     }
+    catch(err){
+        displayError(err.message);
+    };
 };
 
 function changeToSearchingByName(){
