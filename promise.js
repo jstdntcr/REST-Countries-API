@@ -2,8 +2,27 @@
 
 const countriesContainer = document.querySelector(".container");
 
+// public api key
+const API_KEY = "e7a78c3c6bdf45fdbcfb1c9e56a79bfc";
+
+// button "+"
 const addButton = document.querySelector(".input__button");
 addButton.addEventListener("click", addNewCountry);
+
+// input line
+const inputBox = document.querySelector(".input__box");
+
+// type of search buttons
+const searchByNameButton = document.getElementById("by_name_button");
+const searchByCoordinatesButton = document.getElementById("by_coordinates_button");
+searchByNameButton.addEventListener("click", changeToSearchingByName)
+searchByCoordinatesButton.addEventListener("click", changeToSearchingByCoordinates)
+
+// default settings
+let searchTypeFlag = true; // true - by name, false / by coordinates
+setActiveButton(searchByNameButton);
+setUnactiveButton(searchByCoordinatesButton);
+inputBox.placeholder = "INPUT COUNTRY NAME (ex. Spain)";
 
 const displayCountry = function(data){
     const html = `
@@ -60,28 +79,13 @@ const displayNeighbourCountry = function(data, mainCountryName){
         newButton.addEventListener("click", removeCountryNeighbour);
 };
 
-function removeCountry(e){
-    const currentButton = e.currentTarget;
-    currentButton.closest(".countries").remove();
-};
-
-function removeCountryNeighbour(e){
-    const currentButton = e.currentTarget;
-    currentButton.closest(".country__neighbour").remove();
-};
-
-function addNewCountry(e){
-    const input = document.querySelector(".input__box");
-    const countryName = input.value.toLowerCase();
-    if (countryName) getCountry(countryName);
-    input.value = "";
-};
-
 const displayError = function(message){
-    const inputBox = document.querySelector(".input__box");
     inputBox.placeholder = message;
     console.log(message);
-    setTimeout(() => inputBox.placeholder = "INPUT COUNTRY NAME", 5000);
+    setTimeout(() => {
+        if (searchTypeFlag) inputBox.placeholder = "INPUT COUNTRY NAME (ex. Spain)";
+        else inputBox.placeholder = "INPUT COUNTRY COORDINATES (ex. '52.38 9.73')";
+    }, 5000);
 };
 
 const getDataAndConvertToJSON = function(url){
@@ -122,4 +126,107 @@ const getCountry = function(countryName){
         .catch(err => {
             displayError(err.message);
         });
+}
+
+const getCountryNameByGPS = function(lat, lng){
+    const url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}%2C${lng}&key=${API_KEY}`
+    
+    return fetch(url)
+        .then(response => response.json())
+        .then(data => data.results[0].components.country)
+}
+
+const isValidName = function(input){
+    return /^[a-z]+$/.test(input.toLowerCase());
+}
+
+const isValidCoordinates = function(input){
+    if (!/^[0-9. ]+$/.test(input)) return false;
+    const coords = input.split(" ");
+    let counter = 0;
+    let latitude = null;
+    let longitude = null;
+
+    console.log(coords);
+
+    for (let coord of coords){
+        if (counter > 1) break;
+
+        if (!counter && coord.length){
+            latitude = coord;
+            counter++;
+            continue;
+        }
+
+        if (counter == 1 && coord.length){
+            longitude = coord;
+            counter++;
+            break;
+        }
+    }
+
+    const countPoints = function(str){
+        counter = 0;
+        for (let i = 0; i < str.length; i++){
+            if (str[i] === ".") counter++;
+            if (counter > 1) return false;
+        }
+
+        return true;
+    }
+
+    if (countPoints(latitude) && countPoints(longitude)) return true;
+}
+
+function setActiveButton(button){
+    button.classList.remove("unactive__button");
+    button.classList.add("active__button");
+}
+
+function setUnactiveButton(button){
+    button.classList.remove("active__button");
+    button.classList.add("unactive__button");
+}
+
+function removeCountry(e){
+    const currentButton = e.currentTarget;
+    currentButton.closest(".countries").remove();
+};
+
+function removeCountryNeighbour(e){
+    const currentButton = e.currentTarget;
+    currentButton.closest(".country__neighbour").remove();
+};
+
+function addNewCountry(e){
+    const input = document.querySelector(".input__box");
+
+    const inputData = input.value.toLowerCase();
+    input.value = "";
+
+    if (searchTypeFlag){
+        if (inputData && isValidName(inputData)) getCountry(inputData);
+    } else{
+        if (inputData && isValidCoordinates(inputData)){
+            const latitude = inputData.substring(0, inputData.indexOf(" "));
+            const longitude = inputData.substring(inputData.indexOf(" ") + 1);
+
+            return getCountryNameByGPS(latitude, longitude)
+                .then(name => getCountry(name));
+        }
+    }
+};
+
+function changeToSearchingByName(){
+    setActiveButton(searchByNameButton);
+    setUnactiveButton(searchByCoordinatesButton);
+    inputBox.placeholder = "INPUT COUNTRY NAME (ex. Spain)";
+    searchTypeFlag = true;
+}
+
+function changeToSearchingByCoordinates(){
+    setActiveButton(searchByCoordinatesButton);
+    setUnactiveButton(searchByNameButton);
+    inputBox.placeholder = "INPUT COUNTRY COORDINATES (ex. '52.38 9.73')";
+    searchTypeFlag = false;
 }
