@@ -1,4 +1,5 @@
 A web application that displays information about selected countries using the REST Countries API.
-![image](https://github.com/user-attachments/assets/e36801c4-6244-4b6a-9341-126c90ab5553)
+![image](https://github.com/user-attachments/assets/c6c0fc8f-d6fc-4b45-8d0a-5208e7fb5f31)
+
 
 
