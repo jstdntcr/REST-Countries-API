@@ -99,7 +99,7 @@ const getDataAndConvertToJSON = function(url){
 };
 
 const getCountry = function(countryName){
-    getDataAndConvertToJSON(`https://restcountries.com/v3.1/name/${countryName}`)
+    getDataAndConvertToJSON(`https://cors-anywhere.herokuapp.com/https://restcountries.com/v3.1/name/${countryName}`)
         .then(data => {
             displayCountry(data[0]);
             return data;
@@ -112,7 +112,7 @@ const getCountry = function(countryName){
 
             if (neighbours){
                 neighbours.forEach(neighbour => {
-                    neighboursURLs.push(`https://restcountries.com/v3.1/alpha/${neighbour}`)
+                    neighboursURLs.push(`https://cors-anywhere.herokuapp.com/https://restcountries.com/v3.1/alpha/${neighbour}`)
                 });
                 
                 if (neighboursURLs){
@@ -129,7 +129,7 @@ const getCountry = function(countryName){
 }
 
 const getCountryNameByGPS = function(lat, lng){
-    const url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}%2C${lng}&key=${API_KEY}`
+    const url = `https://cors-anywhere.herokuapp.com/https://api.opencagedata.com/geocode/v1/json?q=${lat}%2C${lng}&key=${API_KEY}`
     
     return fetch(url)
         .then(response => response.json())
